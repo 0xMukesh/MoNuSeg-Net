@@ -3,4 +3,5 @@ NAME_CLASS_IDX_MAPPING = {
     "Lymphocyte": 1,
     "Neutrophil": 2,
     "Macrophage": 3,
+    "Ambiguous": 4,
 }
