@@ -15,13 +15,13 @@ class FocalLoss(nn.Module):
     def forward(self, preds: torch.Tensor, targets: torch.Tensor) -> torch.Tensor:
         if preds.ndim > 2:
             preds = rearrange(preds, "b c h w -> (b h w) c")
-            targets = rearrange(targets, "b h w -> (b h w)")
+            targets = rearrange(targets, "b c h w -> (b h w) c")
 
         logpt = F.log_softmax(preds, dim=1)
         pt = logpt.exp()
 
-        logpt = logpt.gather(dim=1, index=targets.unsqueeze(1)).squeeze(1)
-        pt = pt.gather(dim=1, index=targets.unsqueeze(1)).squeeze(1)
+        logpt = logpt.gather(dim=1, index=targets.type(torch.int32)).squeeze(1)
+        pt = pt.gather(dim=1, index=targets.type(torch.int64)).squeeze(1)
 
         loss = -self.alpha * (1 - pt) ** self.gamma * logpt
         return loss.mean()

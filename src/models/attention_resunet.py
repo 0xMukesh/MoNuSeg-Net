@@ -48,7 +48,7 @@ class DoubleConv(nn.Module):
         identity = x
         x = self.conv(x)
         identity = self.identity_mapping(identity)
-        x += identity
+        x = x + identity
         x = self.relu(x)
 
         return x

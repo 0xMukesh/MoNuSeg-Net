@@ -26,11 +26,9 @@ class MoNuSACDataset(Dataset):
         out_img_path = self.img_files[idx].replace("in.png", "out.png")
 
         in_img = Image.open(in_img_path)
-        if self.transform:
-            in_img = self.transform(in_img)
-
         out_img = Image.open(out_img_path)
+
         if self.transform:
-            out_img = self.transform(out_img)
+            in_img, out_img = self.transform(in_img, out_img)
 
         return in_img, out_img

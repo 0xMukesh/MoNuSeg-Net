@@ -11,23 +11,25 @@ from .utils import CombinedTransform
 
 @dataclass
 class TrainingConfig:
-    target_size = (512, 512)
-    batch_size = 6
+    target_size = (256, 256)
+    batch_size = 8
     pin_memory = True
     num_workers = 2
 
     epochs = 1
     lr = 1e-4
 
-    train_dataset_root_dir = "./data/train/masks"
-    test_dataset_root_dir = "./data/test/masks"
+    train_dataset_root_dir = "/content/data/train/masks"
+    test_dataset_root_dir = "/content/data/test/masks"
     checkpoints_dir = "checkpoints"
 
 
 config = TrainingConfig()
 
 
-additional_transform = T.Compose([T.Resize(config.target_size), T.ToTensor()])
+additional_transform = T.Compose(
+    [T.Resize(config.target_size), T.Grayscale(), T.ToTensor()]
+)
 
 train_transform = CombinedTransform(
     rotation_degrees=15.0,
@@ -65,7 +67,7 @@ test_loader = DataLoader(
 )
 
 device = "cuda" if torch.cuda.is_available() else "cpu"
-model = AttentionResidualUNet(in_channels=1, num_classes=4).to(device)
+model = AttentionResidualUNet(in_channels=1, num_classes=1).to(device)
 loss_fn = FocalDiceLoss(num_classes=5)
 optimizer = torch.optim.Adam(params=model.parameters(), lr=config.lr)
 
