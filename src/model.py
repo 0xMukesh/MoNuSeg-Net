@@ -1,5 +1,6 @@
 import torch
 from torch import nn
+import torch.nn.functional as F
 from typing import List
 
 
@@ -28,16 +29,18 @@ class DoubleConv(nn.Module):
             nn.ReLU(inplace=True),
         )
 
-        self.identity_mapping = nn.Sequential(
-            nn.Conv2d(
-                in_channels=in_channels,
-                out_channels=out_channels,
-                kernel_size=1,
-                bias=False,
-            ),
-            nn.BatchNorm2d(num_features=out_channels),
-            nn.ReLU(inplace=True),
-        )
+        if in_channels != out_channels:
+            self.identity_mapping = nn.Sequential(
+                nn.Conv2d(
+                    in_channels=in_channels,
+                    out_channels=out_channels,
+                    kernel_size=1,
+                    bias=False,
+                ),
+                nn.BatchNorm2d(num_features=out_channels),
+            )
+        else:
+            self.identity_mapping = nn.Identity()
 
         self.relu = nn.ReLU(inplace=True)
 
@@ -77,6 +80,14 @@ class AttentionGate(nn.Module):
         self.relu = nn.ReLU(inplace=True)
 
     def forward(self, g: torch.Tensor, x: torch.Tensor) -> torch.Tensor:
+        hx, wx = x.shape[2:], x.shape[3:]
+        hg, wg = g.shape[2:], g.shape[3:]
+
+        if hx != hg or wx != wg:
+            g = F.interpolate(
+                g, size=(x.shape[2:], x.shape[3:]), mode="bilinear", align_corners=False
+            )
+
         g = self.wg(g)
         x1 = self.wx(x)
         out = self.relu(g + x1)
