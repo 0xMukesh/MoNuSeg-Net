@@ -5,7 +5,7 @@ import cv2
 import openslide
 from skimage import draw
 
-from src.constants import NAME_CLASS_IDX_MAPPING
+from src.constants import NAME_CLASS_MAPPING
 
 ANNOTATIONS_FOLDERS = ["./data/train/annotations", "./data/test/annotations"]
 DESTITATION_FOLDER = ["./data/train/masks", "./data/test/masks"]
@@ -16,6 +16,7 @@ masks/
   (patient-id)/
       0/        -- folder related to individual .svs file
         in.png     -- input image converted to .png from .svs
+        out.png    -- combination of all the masks, has values ranging from 0 to 4, where 0 is for background and 1 to 4 is class
         0.png      -- binary mask for epithelial (class index 0)
         1.png      -- binary mask for lymphocyte (class index 1)
         2.png      -- binary mask for neutrophil (class index 2)
@@ -32,7 +33,7 @@ masks/
 def main():
     for i, ann_folder in enumerate(ANNOTATIONS_FOLDERS):
         dest_folder = DESTITATION_FOLDER[i]
-        print(f"processing {ann_folder} ann folder...")
+        print(f"processing {ann_folder} folder...")
 
         patients = sorted(os.listdir(ann_folder))
         for patient in patients:
@@ -73,13 +74,13 @@ def main():
                     if name is None:
                         continue
 
-                    if name not in NAME_CLASS_IDX_MAPPING.keys():
+                    if name not in NAME_CLASS_MAPPING.keys():
                         print(
                             f"got invalid class name ({name}) while processing {j + 1} ann. tag in {xml_file} xml file"
                         )
                         continue
 
-                    class_idx = NAME_CLASS_IDX_MAPPING[name]
+                    class_idx = NAME_CLASS_MAPPING[name]
                     binary_mask = np.zeros((h, w))
 
                     regions_tag = ann.find("Regions")
@@ -112,6 +113,28 @@ def main():
                         binary_mask,
                     )
 
+                for k in list(NAME_CLASS_MAPPING.values())[:-1]:
+                    if not os.path.exists(os.path.join(masks_dest_dir, f"{k}.png")):
+                        cv2.imwrite(
+                            os.path.join(masks_dest_dir, f"{k}.png"), np.zeros((h, w))
+                        )
+
+                multiclass_mask = np.zeros((h, w))
+
+                for k in list(NAME_CLASS_MAPPING.values())[:-1]:
+                    binary_mask = cv2.imread(
+                        os.path.join(masks_dest_dir, f"{k}.png"), cv2.IMREAD_GRAYSCALE
+                    )
+                    if binary_mask is None:
+                        continue
+
+                    binary_mask = (binary_mask > 127).astype(np.uint8)
+                    multiclass_mask[binary_mask == 1] = k + 1
+
+                cv2.imwrite(
+                    os.path.join(masks_dest_dir, "out.png"),
+                    np.array(multiclass_mask),
+                )
                 cv2.imwrite(
                     os.path.join(masks_dest_dir, "in.png"),
                     cv2.cvtColor(np.array(img), cv2.COLOR_RGB2BGR),
