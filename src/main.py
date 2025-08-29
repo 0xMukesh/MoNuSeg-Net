@@ -5,6 +5,7 @@ from dataclasses import dataclass
 
 from .models import AttentionResidualUNet
 from .dataset import MoNuSACDataset
+from .loss import FocalDiceLoss
 from .utils import CombinedTransform
 
 
@@ -63,5 +64,23 @@ test_loader = DataLoader(
     num_workers=config.num_workers,
 )
 
+device = "cuda" if torch.cuda.is_available() else "cpu"
+model = AttentionResidualUNet(in_channels=1, num_classes=4).to(device)
+loss_fn = FocalDiceLoss(num_classes=5)
+optimizer = torch.optim.Adam(params=model.parameters(), lr=config.lr)
+
 for epoch in range(config.epochs):
-    """"""
+    running_loss = 0.0
+
+    for img, mask in train_loader:
+        img, mask = img.to(device), mask.to(device)
+
+        preds = model(img)
+        optimizer.zero_grad()
+        loss = loss_fn(preds, mask)
+        loss.backward()
+        optimizer.step()
+
+        running_loss += loss
+
+    print(f"[{epoch + 1}]/{config.epochs} loss: {running_loss / len(train_loader)}")

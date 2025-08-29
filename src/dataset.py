@@ -22,19 +22,15 @@ class MoNuSACDataset(Dataset):
         return len(self.img_files)
 
     def __getitem__(self, idx: int):
-        in_img = self.img_files[idx]
-        img_dir = in_img.split("in.png")[0]
-        mask_imgs = []
+        in_img_path = self.img_files[idx]
+        out_img_path = self.img_files[idx].replace("in.png", "out.png")
 
-        img = Image.open(self.img_files[idx])
+        in_img = Image.open(in_img_path)
         if self.transform:
-            img = self.transform(img)
+            in_img = self.transform(in_img)
 
-        for i in range(4):
-            mask_img = Image.open(os.path.join(img_dir, f"{i}.png"))
-            if self.transform:
-                mask_img = self.transform(mask_img)
+        out_img = Image.open(out_img_path)
+        if self.transform:
+            out_img = self.transform(out_img)
 
-            mask_imgs.append(mask_img)
-
-        return img, mask_imgs
+        return in_img, out_img
