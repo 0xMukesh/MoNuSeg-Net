@@ -75,9 +75,11 @@ def main():
                         continue
 
                     if name not in NAME_CLASS_MAPPING.keys():
-                        print(
-                            f"got invalid class name ({name}) while processing {j + 1} ann. tag in {xml_file} xml file"
-                        )
+                        if not name == "Ambiguous":
+                            print(
+                                f"got invalid class name ({name}) while processing {j + 1} ann. tag in {xml_file} xml file"
+                            )
+
                         continue
 
                     class_idx = NAME_CLASS_MAPPING[name]

@@ -3,5 +3,4 @@ NAME_CLASS_MAPPING = {
     "Lymphocyte": 1,
     "Neutrophil": 2,
     "Macrophage": 3,
-    "Ambiguous": 4,
 }

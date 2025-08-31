@@ -1,5 +1,10 @@
+import torch
+from torch import nn
+import segmentation_models_pytorch as smp
+from torch.utils.data import DataLoader
 import torchvision.transforms.functional as TF
 import random
+from typing import Literal
 
 
 class CombinedTransform:
@@ -43,3 +48,22 @@ class CombinedTransform:
             mask = TF.rotate(mask, degrees, fill=[0.0])
 
         return img, mask
+
+
+def run_inference(model: nn.Module, loader: DataLoader, device: Literal["cuda", "cpu"]):
+    model.eval()
+    avg_dice_score = 0.0
+
+    dice = smp.losses.DiceLoss(
+        mode="multiclass",
+        log_loss=True,
+        from_logits=True,
+    )
+
+    with torch.no_grad():
+        for img, mask in loader:
+            img, mask = img.to(device).float(), mask.to(device).float()
+            preds = model(img)
+            avg_dice_score += 1 - dice(preds, mask.long())
+
+    return avg_dice_score / len(loader)

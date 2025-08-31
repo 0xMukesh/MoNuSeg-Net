@@ -80,13 +80,11 @@ class AttentionGate(nn.Module):
         self.relu = nn.ReLU(inplace=True)
 
     def forward(self, g: torch.Tensor, x: torch.Tensor) -> torch.Tensor:
-        hx, wx = x.shape[2:], x.shape[3:]
-        hg, wg = g.shape[2:], g.shape[3:]
+        hx, wx = x.shape[2], x.shape[3]
+        hg, wg = g.shape[2], g.shape[3]
 
         if hx != hg or wx != wg:
-            g = F.interpolate(
-                g, size=(x.shape[2:], x.shape[3:]), mode="bilinear", align_corners=False
-            )
+            g = F.interpolate(g, size=(hx, wx), mode="bilinear", align_corners=False)
 
         g = self.wg(g)
         x1 = self.wx(x)
@@ -185,10 +183,3 @@ class AttentionResidualUNet(nn.Module):
         x = self.final_conv(x)
 
         return x
-
-
-if __name__ == "__main__":
-    x = torch.randn((1, 1, 512, 512))
-    model = AttentionResidualUNet(in_channels=1, num_classes=1)
-    out = model(x)
-    print(out.shape)
