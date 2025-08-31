@@ -4,6 +4,7 @@ import segmentation_models_pytorch as smp
 from torch.utils.data import DataLoader
 import torchvision.transforms.functional as TF
 import numpy as np
+from einops import parse_shape
 import random
 from typing import Literal, List
 
@@ -93,15 +94,19 @@ class PatchExtractor:
         return ratio >= self.min_foreground_ratio
 
     def _get_img_dims(self, img: np.ndarray):
-        if img.ndim > 3:  # (N, C, H, W)
-            h, w = img.shape[2:]
+        if img.ndim > 3:
+            shape_dict = parse_shape(img, "n c h w")
+            h, w = shape_dict["h"], shape_dict["w"]
         elif img.ndim == 3:
-            if img.shape[0] <= 4:  # (C, H, W)
-                h, w = img.shape[1:]
-            else:  # (H, W, C)
-                h, w = img.shape[:2]
+            if img.shape[0] <= 4:
+                shape_dict = parse_shape(img, "c h w")
+                h, w = shape_dict["h"], shape_dict["w"]
+            else:
+                shape_dict = parse_shape(img, "h w c")
+                h, w = shape_dict["h"], shape_dict["w"]
         else:
-            h, w = img.shape
+            shape_dict = parse_shape(img, "h w")
+            h, w = shape_dict["h"], shape_dict["w"]
 
         return h, w
 

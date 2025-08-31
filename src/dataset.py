@@ -1,6 +1,7 @@
 from torch.utils.data import Dataset
 from PIL import Image
 import numpy as np
+from einops import rearrange
 import os
 from typing import List, Optional
 
@@ -68,8 +69,8 @@ class MoNuSACPatchDataset(Dataset):
             img = np.array(img)
             mask = np.array(mask)
 
-            img = np.transpose(img, (2, 0, 1))
-            mask = np.expand_dims(mask, 0)
+            img = rearrange(img, "h w c -> c h w")
+            mask = rearrange(mask, "h w -> 1 h w")
 
             img_patches, mask_patches = self.patch_extractor.extract_patches_from_image(
                 img, mask
@@ -96,8 +97,8 @@ class MoNuSACPatchDataset(Dataset):
                         constant_values=0,
                     )
 
-                    img_patches[i] = np.permute_dims(img_patches[i], (1, 2, 0))
-                    mask_patches[i] = mask_patches[i].squeeze(0)
+                    img_patches[i] = rearrange(img_patches[i], "c h w -> h w c")
+                    mask_patches[i] = rearrange(mask_patches[i], "1 h w -> h w")
 
                 self.img_patches.append(Image.fromarray(img_patches[i]))
                 self.mask_patches.append(Image.fromarray(mask_patches[i]))

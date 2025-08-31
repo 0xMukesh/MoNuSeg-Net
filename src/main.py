@@ -8,7 +8,7 @@ from dataclasses import dataclass
 from typing import cast
 
 from .models import AttentionResidualUNet
-from .dataset import MoNuSACDataset
+from .dataset import MoNuSACPatchDataset
 from .loss import FocalDiceLoss
 from .utils import CombinedTransform, run_inference
 from .constants import NAME_CLASS_MAPPING
@@ -61,10 +61,10 @@ test_transform = CombinedTransform(
     mask_additional_transform=mask_additional_transform,
 )
 
-train_dataset = MoNuSACDataset(
+train_dataset = MoNuSACPatchDataset(
     root=config.train_dataset_root_dir, transform=train_transform
 )
-test_dataset = MoNuSACDataset(
+test_dataset = MoNuSACPatchDataset(
     root=config.test_dataset_root_dir, transform=test_transform
 )
 
@@ -112,7 +112,7 @@ for epoch in range(config.epochs):
 
         with torch.autocast(device):
             pred = model(img)
-            loss = loss_fn(pred, mask)
+            loss = loss_fn(pred, mask.long())
 
         optimizer.zero_grad()
         scaler.scale(loss).backward()
