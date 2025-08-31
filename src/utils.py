@@ -3,8 +3,9 @@ from torch import nn
 import segmentation_models_pytorch as smp
 from torch.utils.data import DataLoader
 import torchvision.transforms.functional as TF
+import numpy as np
 import random
-from typing import Literal
+from typing import Literal, List
 
 
 class CombinedTransform:
@@ -48,6 +49,61 @@ class CombinedTransform:
             mask = TF.rotate(mask, degrees, fill=[0.0])
 
         return img, mask
+
+
+class PatchExtractor:
+    def __init__(
+        self,
+        patch_size: int = 256,
+        stride_size: int = 128,
+        min_foreground_ratio: float = 0.1,
+    ) -> None:
+        self.patch_size = patch_size
+        self.stride_size = stride_size
+        self.min_foreground_ratio = min_foreground_ratio
+
+    def extract_patches_from_image(self, img: np.ndarray, mask: np.ndarray):
+        img_patches: List[np.ndarray] = []
+        mask_patches: List[np.ndarray] = []
+
+        h, w = self._get_img_dims(img)
+
+        for y in range(0, h - self.patch_size + 1, self.stride_size):
+            for x in range(0, w - self.patch_size + 1, self.stride_size):
+                if img.ndim == 3 and img.shape[0] <= 4:
+                    img_patch = img[:, y : y + self.patch_size, x : x + self.patch_size]
+                    mask_patch = mask[
+                        :, y : y + self.patch_size, x : x + self.patch_size
+                    ]
+                else:
+                    img_patch = img[y : y + self.patch_size, x : x + self.patch_size]
+                    mask_patch = mask[y : y + self.patch_size, x : x + self.patch_size]
+
+                if self._has_enough_foreground(mask_patch):
+                    img_patches.append(img_patch)
+                    mask_patches.append(mask_patch)
+
+        return img_patches, mask_patches
+
+    def _has_enough_foreground(self, mask: np.ndarray):
+        h, w = self._get_img_dims(mask)
+        non_zero_pixels = np.sum(mask > 0)
+        ratio = non_zero_pixels / (h * w)
+
+        return ratio >= self.min_foreground_ratio
+
+    def _get_img_dims(self, img: np.ndarray):
+        if img.ndim > 3:  # (N, C, H, W)
+            h, w = img.shape[2:]
+        elif img.ndim == 3:
+            if img.shape[0] <= 4:  # (C, H, W)
+                h, w = img.shape[1:]
+            else:  # (H, W, C)
+                h, w = img.shape[:2]
+        else:
+            h, w = img.shape
+
+        return h, w
 
 
 def run_inference(model: nn.Module, loader: DataLoader, device: Literal["cuda", "cpu"]):

@@ -115,7 +115,7 @@ def main():
                         binary_mask,
                     )
 
-                for k in list(NAME_CLASS_MAPPING.values())[:-1]:
+                for k in list(NAME_CLASS_MAPPING.values()):
                     if not os.path.exists(os.path.join(masks_dest_dir, f"{k}.png")):
                         cv2.imwrite(
                             os.path.join(masks_dest_dir, f"{k}.png"), np.zeros((h, w))
@@ -123,7 +123,7 @@ def main():
 
                 multiclass_mask = np.zeros((h, w))
 
-                for k in list(NAME_CLASS_MAPPING.values())[:-1]:
+                for k in list(NAME_CLASS_MAPPING.values()):
                     binary_mask = cv2.imread(
                         os.path.join(masks_dest_dir, f"{k}.png"), cv2.IMREAD_GRAYSCALE
                     )
