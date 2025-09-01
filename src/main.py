@@ -37,19 +37,22 @@ config = TrainingConfig()
 
 img_additional_transform = T.Compose(
     [
-        T.Resize(config.target_size),
+        T.ElasticTransform(),
         T.Grayscale(),
         T.ToTensor(),
         T.Normalize(mean=[0.6189], std=[0.1726]),
     ]
 )
 mask_additional_transform = T.Compose(
-    [T.Resize(config.target_size), T.Grayscale(), T.PILToTensor()]
+    [
+        T.ElasticTransform(),
+        T.Grayscale(),
+        T.PILToTensor(),
+    ]
 )
 
-
 train_transform = CombinedTransform(
-    rotation_degrees=15.0,
+    rotation_degrees=90.0,
     img_additional_transform=img_additional_transform,
     mask_additional_transform=mask_additional_transform,
 )
