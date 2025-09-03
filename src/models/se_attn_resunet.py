@@ -5,10 +5,14 @@ from typing import List
 
 
 class DoubleConv(nn.Module):
-    def __init__(self, in_channels: int, out_channels: int) -> None:
+    def __init__(
+        self, in_channels: int, out_channels: int, reduction_rate: int = 16
+    ) -> None:
         super().__init__()
 
-        self.conv = nn.Sequential(
+        self.reduction_rate = reduction_rate
+
+        self.conv1 = nn.Sequential(
             nn.Conv2d(
                 in_channels=in_channels,
                 out_channels=out_channels,
@@ -18,6 +22,25 @@ class DoubleConv(nn.Module):
             ),
             nn.BatchNorm2d(num_features=out_channels),
             nn.ReLU(inplace=True),
+        )
+
+        self.se = nn.Sequential(
+            nn.AdaptiveAvgPool2d((1, 1)),
+            nn.Conv2d(
+                in_channels=out_channels,
+                out_channels=out_channels // self.reduction_rate,
+                kernel_size=(1, 1),
+            ),
+            nn.ReLU(),
+            nn.Conv2d(
+                in_channels=out_channels // self.reduction_rate,
+                out_channels=out_channels,
+                kernel_size=(1, 1),
+            ),
+            nn.Sigmoid(),
+        )
+
+        self.conv2 = nn.Sequential(
             nn.Conv2d(
                 in_channels=out_channels,
                 out_channels=out_channels,
@@ -45,9 +68,13 @@ class DoubleConv(nn.Module):
         self.relu = nn.ReLU(inplace=True)
 
     def forward(self, x: torch.Tensor) -> torch.Tensor:
-        identity = x
-        x = self.conv(x)
-        identity = self.identity_mapping(identity)
+        identity = self.identity_mapping(x)
+
+        x = self.conv1(x)
+        x = self.conv2(x)
+        se = self.se(x)
+        x = x * se
+
         x = x + identity
         x = self.relu(x)
 
