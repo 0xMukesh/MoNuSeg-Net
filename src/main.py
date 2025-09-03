@@ -7,7 +7,7 @@ import os
 from dataclasses import dataclass
 from typing import cast
 
-from .models import AttentionResidualUNet
+from .models import UNet
 from .dataset import MoNuSACPatchDataset
 from .loss import FocalDiceLoss
 from .utils import CombinedTransform, run_inference
@@ -87,7 +87,7 @@ test_loader = DataLoader(
 )
 
 device = "cuda" if torch.cuda.is_available() else "cpu"
-model = AttentionResidualUNet(in_channels=1, num_classes=config.num_classes).to(device)
+model = UNet(in_channels=1, num_classes=config.num_classes).to(device)
 loss_fn = FocalDiceLoss(num_classes=config.num_classes)
 optimizer = torch.optim.AdamW(
     params=model.parameters(), lr=config.lr, weight_decay=config.weight_decay

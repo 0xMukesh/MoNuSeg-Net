@@ -161,12 +161,12 @@ class DecoderBlock(nn.Module):
         return x
 
 
-class AttentionResidualUNet(nn.Module):
+class UNet(nn.Module):
     def __init__(
         self,
         in_channels: int,
         num_classes: int,
-        features: List[int] = [64, 128, 256, 512],
+        features: List[int] = [64, 128, 256, 512, 1024],
     ) -> None:
         super().__init__()
 
